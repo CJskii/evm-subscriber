@@ -1,0 +1,26 @@
+services:
+  evm-node:
+    image: nethermind/nethermind:latest
+    container_name: evm-node
+    command:
+      --Merge.Enabled false
+      --JsonRpc.Enabled true
+      --JsonRpc.EngineHost 0.0.0.0
+      --JsonRpc.EnginePort 8551
+      --JsonRpc.Host 0.0.0.0 # Default is 127.0.0.1 (0.0.0.0 is optional to run this on different device in local network)
+      --JsonRpc.Port 8545
+      --JsonRpc.WebSocketsPort 8546
+      --JsonRpc.CorsOrigins "*"
+      --JsonRpc.EnabledModules [admin,client,debug,engine,health,subscribe,txpool,personal,evm,eth]
+      --JsonRpc.JwtSecretFile /nethermind/jwt-secret/jwt-secret
+      --Sync.FastSync true
+    ports:
+      - "8545:8545" # API port
+      - "8546:8546" # Websocket port
+    volumes:
+      - /path/to/database/location/nethermind/db:/nethermind/db
+      - /path/to/secret/location/jwt-secret:/nethermind/jwt-secret
+    deploy:
+      resources:
+        limits:
+          memory: 16g # 16gb of memory
