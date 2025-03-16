@@ -22,8 +22,8 @@ type RPCRequest struct {
 
 type RPCResponse struct {
 	Jsonrpc string `json:"jsonrpc"`
-	Method string `json:"method,omitempty"`
-	Params struct {
+	Method  string `json:"method,omitempty"`
+	Params  struct {
 		Subscription string      `json:"subscription"`
 		Result       interface{} `json:"result"`
 	} `json:"params"`
@@ -42,13 +42,13 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to decode secret key: %v", err)
 	}
-	
+
 	conn, err := subscribeToWebsocket(string(tokenString), host)
 	if err != nil {
 		log.Fatalf("Failed to subscribe to websocket: %v", err)
 	}
 
-	subscribeToNewPendingTransactions(conn)	
+	subscribeToNewPendingTransactions(conn)
 	listenToWebsocket(conn)
 }
 
