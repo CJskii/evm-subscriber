@@ -36,6 +36,8 @@ Inside `.env`, add:
 ```ini
 SECRET_KEY=<hex-encoded-secret>
 ETH_HOST=<local-address-of-evm-node>
+WS_PORT=8546
+RPC_PORT=8545
 ```
 
 ### 3️⃣ (Optional) Generate `go.sum` if it’s missing or out of date:

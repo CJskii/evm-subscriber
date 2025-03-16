@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/hex"
 	"encoding/json"
 	"log"
@@ -34,6 +35,8 @@ func main() {
 
 	secretKey := os.Getenv("SECRET_KEY")
 	host := os.Getenv("ETH_HOST")
+	wsPort, rpcPort := os.Getenv("WS_PORT"), os.Getenv("RPC_PORT")
+
 	if secretKey == "" || host == "" {
 		log.Fatal("SECRET_KEY or ETH_HOST not set in environment.")
 	}
@@ -43,18 +46,67 @@ func main() {
 		log.Fatalf("Failed to decode secret key: %v", err)
 	}
 
-	conn, err := subscribeToWebsocket(string(tokenString), host)
+	conn, err := subscribeToWebsocket(string(tokenString), host, wsPort)
 	if err != nil {
 		log.Fatalf("Failed to subscribe to websocket: %v", err)
 	}
 
+	checkSyncStatus(secretKey, host, rpcPort)
 	subscribeToNewPendingTransactions(conn)
 	listenToWebsocket(conn)
 }
+func checkSyncStatus(secretKey, host, rpcPort string) {
+	request := RPCRequest{
+		Jsonrpc: "2.0",
+		ID:      1,
+		Method:  "eth_syncing",
+		Params:  []interface{}{},
+	}
+	log.Printf("[ 👉 ] Sending request to check sync status: %+v", request)
 
-func subscribeToWebsocket(tokenString, host string) (*websocket.Conn, error) {
-	log.Printf("[ 🔌 ] Using Ethereum WebSocket host: %s", host)
-	u := url.URL{Scheme: "ws", Host: host, Path: "/"}
+	// Send the JSON-RPC request.
+	response, err := sendRPCRequest(request, secretKey, host, rpcPort)
+	if err != nil {
+		log.Fatalf("Failed to check sync status: %v", err)
+	}
+
+	// Log the response.
+	log.Printf("[ 👈 ] Received sync status: %+v", response)
+}
+
+func sendRPCRequest(request RPCRequest, secretKey, host string, rpcPort string) (RPCResponse, error) {
+	rpcUrl := "http://" + host + ":" + rpcPort + "/"
+	log.Printf("%s", "[ 🚀 ] RPC host: " + rpcUrl)
+	client := &http.Client{}
+	reqBody, err := json.Marshal(request)
+	if err != nil {
+		return RPCResponse{}, err
+	}
+
+	req, err := http.NewRequest("POST", rpcUrl, bytes.NewBuffer(reqBody))
+	if err != nil {
+		return RPCResponse{}, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+secretKey)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return RPCResponse{}, err
+	}
+	defer resp.Body.Close()
+
+	var rpcResponse RPCResponse
+	if err := json.NewDecoder(resp.Body).Decode(&rpcResponse); err != nil {
+		return RPCResponse{}, err
+	}
+
+	return rpcResponse, nil
+}
+
+func subscribeToWebsocket(tokenString, host string, wsPort string) (*websocket.Conn, error) {
+	websocketHost := host + ":" + wsPort
+	u := url.URL{Scheme: "ws", Host: websocketHost, Path: "/"}
 	log.Printf("[ 🔌 ] Connecting to WebSocket URL: %s", u.String())
 
 	header := http.Header{}
@@ -68,7 +120,6 @@ func subscribeToWebsocket(tokenString, host string) (*websocket.Conn, error) {
 	if err != nil {
 		return nil, err
 	}
-	log.Println("[ ✅ ] Connected to Ethereum WebSocket.")
 	log.Println("[ ✅ ] Connected to Ethereum WebSocket.")
 
 	return conn, nil
