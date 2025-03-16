@@ -1,0 +1,7 @@
+services:
+  subscriber:
+    build: .
+    env_file:
+      - .env
+    volumes:
+      - .:/app
