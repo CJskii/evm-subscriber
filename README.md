@@ -20,7 +20,7 @@ evm-subscriber/
 ### 1️⃣ Clone this repository:
 
 ```bash
-git clone https://github.com/youruser/evm-subscriber.git
+git clone https://github.com/CJskii/evm-subscriber.git
 cd evm-subscriber
 ```
 
